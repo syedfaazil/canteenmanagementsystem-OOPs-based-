@@ -1,26 +1,28 @@
 import os
-# Base directory for files - Modified to use current directory for better portability
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# setting up base directory with complete path
+BASE_DIR = "/Users/syedfaazil/Documents/Python/"
 def setup_files():
-    """Initialize necessary files with sample data if they don't exist"""
+    """Access the necessary files"""
     files_data = {
-        'users.txt': 'admin1|admin123|admin|Main Canteen\nstudent1|pass123|student|S001|1000|wallet123\n',
-        'wallet.txt': 'S001|500.0\n',
-        'food_items.txt': '1|Burger|Delicious burger|100|True\n2|Pizza|Cheesy pizza|200|True\n',
-        'bill_history.txt': ''
+        'users.txt': os.path.join(BASE_DIR, 'users.txt'),
+        'wallet.txt': os.path.join(BASE_DIR, 'wallet.txt'),
+        'food_items.txt': os.path.join(BASE_DIR, 'food_items.txt'),
+        'bill_history.txt': os.path.join(BASE_DIR, 'bill_history.txt')
     }
-    
-    for filename, initial_data in files_data.items():
-        file_path = os.path.join(BASE_DIR, filename)
-        if not os.path.exists(file_path):
-            with open(file_path, 'w') as f:
-                f.write(initial_data)
-# File paths
+    #this below code can be used if files doesnt exits
+    '''for filename, file_path in files_data.items():
+        if os.path.exists(file_path):
+            print(f"File '{filename}' exists at {file_path}. Ready to use.")
+        else:
+            print(f"Error: File '{filename}' not found at {file_path}.")'''
+# calling the function to check if files are accessible
+setup_files()
+#file paths
 users_file = os.path.join(BASE_DIR, 'users.txt')
 wallet_file = os.path.join(BASE_DIR, 'wallet.txt')
 bill_history_file = os.path.join(BASE_DIR, 'bill_history.txt')
 food_items_file = os.path.join(BASE_DIR, 'food_items.txt')
-# Exception Classes
+#exception Classes
 class CanteenException(Exception):
     """Base exception class for canteen-related errors"""
     pass
@@ -33,7 +35,7 @@ class InvalidPasswordException(CanteenException):
 class UserNotFoundException(CanteenException):
     def __init__(self, message="User not found"):
         super().__init__(message)
-# User class
+#user class
 class User:
     def __init__(self, username, password, role):
         self.username = username
@@ -45,8 +47,7 @@ class User:
     def authenticate(self, password):
         """Authenticate user"""
         return self.password == password
-
-# Student class (Inheritance)
+#inheritance of the student class
 class Student(User):
     def __init__(self, username, password, role, student_id, canteen_card_balance, wallet_password):
         super().__init__(username, password, role)
@@ -55,17 +56,15 @@ class Student(User):
         self.wallet_password = wallet_password
         self.cart = Cart()
         self.order_history = []
-
     def greet_user(self):
-        """Override greeting method - Polymorphism example"""
+        #overriding greet
         print(f"\n{'='*50}")
         print(f"Welcome back, {self.username}!")
         print(f"Student ID: {self.student_id}")
         print(f"Canteen Card Balance: ₹{self.canteen_card_balance:.2f}")
         print(f"{'='*50}")
-
     def student_menu(self, menu):
-        """Main menu for student interactions"""
+        #menu for student interactions
         while True:
             print("\n=== Student Menu ===")
             print("1. View Menu")
@@ -76,7 +75,6 @@ class Student(User):
             print("6. Check Wallet Balance")
             print("7. Logout")
             print("="*20)
-
             try:
                 choice = input("Enter your choice (1-7): ")
                 
@@ -99,13 +97,11 @@ class Student(User):
                     print("Invalid choice. Please try again.")
             except Exception as e:
                 print(f"An error occurred: {e}")
-
     def browse_menu(self, menu):
         print("\n=== Available Menu Items ===")
         if not menu.food_items:
             print("No items available in menu")
             return
-            
         for item in menu.food_items:
             status = "✓ Available" if item.availability else "✗ Unavailable"
             print(f"\nID: {item.item_id}")
@@ -114,28 +110,23 @@ class Student(User):
             print(f"Price: ₹{item.price:.2f}")
             print(f"Status: {status}")
             print("-" * 30)
-
     def add_items_to_cart(self, menu):
         self.browse_menu(menu)
         try:
             item_id = int(input("\nEnter Item ID to add to cart (0 to cancel): "))
             if item_id == 0:
                 return
-                
             selected_item = None
             for item in menu.food_items:
                 if item.item_id == item_id:
                     selected_item = item
-                    break
-                    
+                    break     
             if not selected_item:
                 print("Item not found")
                 return
-                
             if not selected_item.availability:
                 print("This item is currently unavailable")
                 return
-                
             while True:
                 try:
                     quantity = int(input("Enter quantity: "))
@@ -153,34 +144,28 @@ class Student(User):
             print("Please enter a valid number")
         except Exception as e:
             print(f"Error adding to cart: {e}")
-
     def view_cart(self):
         if not self.cart.cart_items:
             print("\nYour cart is empty!")
-            return
-            
+            return    
         print("\n=== Your Cart ===")
         for item, quantity in self.cart.cart_items:
             print(f"{quantity}x {item.name:<20} ₹{item.price:.2f} each")
             print(f"Subtotal: ₹{item.price * quantity:.2f}")
             print("-" * 30)
         print(f"Total: ₹{self.cart.total_price:.2f}")
-
     def process_order(self):
         if not self.cart.cart_items:
             print("\nYour cart is empty!")
-            return
-            
+            return  
         self.view_cart()
         print("\n=== Payment Options ===")
         print("1. Canteen Card")
         print("2. Wallet")
         print("3. Cash")
         print("4. Cancel")
-        
         try:
             choice = input("Choose payment method (1-4): ")
-            
             if choice == "1":
                 if self.cart.total_price > self.canteen_card_balance:
                     print("Insufficient balance in canteen card")
@@ -189,7 +174,7 @@ class Student(User):
                 self.complete_order("canteen_card")
                 
             elif choice == "2":
-                # Load wallet balance
+                # adding wallet balance to the file
                 wallet_balance = 0
                 try:
                     with open(wallet_file, 'r') as f:
@@ -211,7 +196,7 @@ class Student(User):
                     print("Invalid wallet password")
                     return
                 
-                # Update wallet balance
+                # updation of wallet balance
                 with open(wallet_file, 'r') as f:
                     lines = f.readlines()
                 with open(wallet_file, 'w') as f:
@@ -223,27 +208,21 @@ class Student(User):
                             f.write(line)
                 
                 self.complete_order("wallet")
-                
             elif choice == "3":
                 self.complete_order("cash")
-                
             elif choice == "4":
                 print("Order cancelled")
                 return
-                
             else:
-                print("Invalid choice")
-                
+                print("Invalid choice") 
         except Exception as e:
             print(f"Error processing order: {e}")
-
     def complete_order(self, payment_method):
         order = Order(self, self.cart.cart_items, self.cart.total_price)
         print(f"\nOrder placed successfully using {payment_method}!")
         if payment_method == "canteen_card":
             print(f"Remaining canteen card balance: ₹{self.canteen_card_balance:.2f}")
         self.cart.clear_cart()
-
     def view_order_history(self):
         try:
             print("\n=== Order History ===")
@@ -278,10 +257,7 @@ class Student(User):
             print("Wallet system is not available")
         except Exception as e:
             print(f"Error checking wallet balance: {e}")
-
-# Admin class
-# [Previous imports and class definitions remain the same until Admin class]
-
+#admin class
 class Admin(User):
     def __init__(self, username, password, role, canteen_name):
         super().__init__(username, password, role)
@@ -332,7 +308,6 @@ class Admin(User):
             print("\n=== Add New Menu Item ===")
             # Get the next available ID
             item_id = max([item.item_id for item in menu.food_items], default=0) + 1
-            
             name = input("Enter Item Name: ").strip()
             description = input("Enter Description: ").strip()
             while True:
@@ -423,7 +398,7 @@ class Admin(User):
         try:
             student_id = input("Enter student ID: ").strip()
             
-            # Load current wallet data
+            # showing current wallet balancw
             wallet_data = {}
             try:
                 with open(wallet_file, 'r') as f:
@@ -467,7 +442,7 @@ class Admin(User):
                 wallet_data[student_id] -= amount
                 print(f"Subtracted ₹{amount:.2f}")
             
-            # Save updated wallet data
+            #updated balance in wallet
             with open(wallet_file, 'w') as f:
                 for sid, balance in wallet_data.items():
                     f.write(f"{sid}|{balance}\n")
@@ -476,11 +451,6 @@ class Admin(User):
             
         except Exception as e:
             print(f"Error updating wallet: {e}")
-
-# [Rest of the code remains the samen
-
-
-# Other classes remain the same...
 class FoodItem:
     def __init__(self, item_id, name, description, price, availability=True):
         self.item_id = item_id
@@ -543,9 +513,8 @@ class Cart:
     def clear_cart(self):
         self.cart_items = []
         self.total_price = 0
-
 def main():
-    """Main function to run the canteen management system"""
+    #main function to run the canteen management system
     setup_files()
     menu = Menu()
     
@@ -561,7 +530,7 @@ def main():
             password = input("Password: ")
             
             try:
-                # Read users from file
+                # reading users from file
                 with open(users_file, 'r') as f:
                     for line in f:
                         user_data = line.strip().split('|')
