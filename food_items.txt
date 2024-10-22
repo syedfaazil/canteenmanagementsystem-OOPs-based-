@@ -1,0 +1,6 @@
+1|Burger|Cheese burger|20.0|True
+2|Pizza|Margherita pizza|30.0|True
+3|Pasta|Creamy pasta|25.0|False
+4|Salad|Fresh garden salad|15.0|True
+6|dosa|breakfast|45.0|True
+7|Frooti|juice|20.0|True

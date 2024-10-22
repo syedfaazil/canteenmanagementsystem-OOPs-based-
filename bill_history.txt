@@ -1,0 +1,6 @@
+S123|1,Sandwich;2,Pizza|80.0|UPI|faazil123@upi
+S124|2,Pizza|50.0|Wallet
+S123|3,Burger|70.0|CashS123||0|UPI|None
+001|1,Burger x 1|50|Wallet
+S001|2,Pizza x 2|200|Cash
+S001|2x dosa|80.0
