@@ -1,0 +1,6 @@
+admin1|admin123|admin|main Canteen
+admin2|admin456|admin|IT canteen
+Kiruthik|pranav12|student|STD101|1000.00|wall123
+Vidhyarth|SE12|student|STD102|1500.00|wall456
+Nithes|JS12|student|STD103|750.00|wall789
+Syed|Faazil1|student|STD104|2000.00|wall321
