@@ -1,3 +1,0 @@
-admin1|Canteen1
-admin2|Canteen2
-admin3|Canteen3
