@@ -1,5 +1,6 @@
 import os
 # setting up base directory with complete path
+#dont forget to change file path while using the code
 BASE_DIR = "/Users/syedfaazil/Documents/Python/"
 def setup_files():
     """Access the necessary files"""
