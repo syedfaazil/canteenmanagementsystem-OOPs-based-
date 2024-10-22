@@ -1,6 +1,7 @@
-S123|1,Sandwich;2,Pizza|80.0|UPI|faazil123@upi
-S124|2,Pizza|50.0|Wallet
-S123|3,Burger|70.0|CashS123||0|UPI|None
-001|1,Burger x 1|50|Wallet
-S001|2,Pizza x 2|200|Cash
-S001|2x dosa|80.0
+STD101|2x Masala Dosa; 1x Coffee|190.00
+STD102|1x Pizza; 2x Samosa; 1x Tea|180.00
+STD103|3x Sandwich; 2x Ice Cream|310.00
+STD101|1x Burger; 1x Fruit Juice|135.00
+STD104|2x Noodles; 1x Tea|190.00
+STD102|1x Pizza; 1x Ice Cream|170.00
+STD105|2x Samosa; 1x Coffee; 1x Sandwich|140.00
