@@ -5,3 +5,7 @@ STD101|1x Burger; 1x Fruit Juice|135.00
 STD104|2x Noodles; 1x Tea|190.00
 STD102|1x Pizza; 1x Ice Cream|170.00
 STD105|2x Samosa; 1x Coffee; 1x Sandwich|140.00
+STD101|1x Fruit Juice|45.0
+STD101|1x Noodles|85.0
+STD101|1x Tea|20.0
+STD101|2x Noodles|170.0

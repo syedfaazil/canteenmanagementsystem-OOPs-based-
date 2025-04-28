@@ -1,21 +1,23 @@
 import os
 # setting up base directory with complete path
 #dont forget to change file path while using the code
-BASE_DIR = "/Users/syedfaazil/Documents/Python/"
+BASE_DIR = "/projects/canteenmanagementsystem/project" # UPDATE UR FILE PATH HERE KEEPING THE .py FILE AND OTHER DETAILS IN THE SAME FOLDER
 def setup_files():
     """Access the necessary files"""
     files_data = {
         'users.txt': os.path.join(BASE_DIR, 'users.txt'),
         'wallet.txt': os.path.join(BASE_DIR, 'wallet.txt'),
         'food_items.txt': os.path.join(BASE_DIR, 'food_items.txt'),
-        'bill_history.txt': os.path.join(BASE_DIR, 'bill_history.txt')
+        'bill_history.txt': os.path.join(BASE_DIR, 'bill_history.txt'),
+        'students.txt': os.path.join(BASE_DIR, 'students.txt')  # Added new file
     }
-    #this below code can be used if files doesnt exits
-    '''for filename, file_path in files_data.items():
-        if os.path.exists(file_path):
-            print(f"File '{filename}' exists at {file_path}. Ready to use.")
-        else:
-            print(f"Error: File '{filename}' not found at {file_path}.")'''
+    # Create files if they don't exist
+    for filename, file_path in files_data.items():
+        if not os.path.exists(file_path):
+            with open(file_path, 'w') as f:
+                pass
+            print(f"Created file: {filename}")
+
 # calling the function to check if files are accessible
 setup_files()
 #file paths
@@ -23,6 +25,8 @@ users_file = os.path.join(BASE_DIR, 'users.txt')
 wallet_file = os.path.join(BASE_DIR, 'wallet.txt')
 bill_history_file = os.path.join(BASE_DIR, 'bill_history.txt')
 food_items_file = os.path.join(BASE_DIR, 'food_items.txt')
+students_file = os.path.join(BASE_DIR, 'students.txt')  # Added new file path
+
 #exception Classes
 class CanteenException(Exception):
     """Base exception class for canteen-related errors"""
@@ -36,6 +40,10 @@ class InvalidPasswordException(CanteenException):
 class UserNotFoundException(CanteenException):
     def __init__(self, message="User not found"):
         super().__init__(message)
+class UserAlreadyExistsException(CanteenException):
+    def __init__(self, message="Username already exists"):
+        super().__init__(message)
+
 #user class
 class User:
     def __init__(self, username, password, role):
@@ -48,15 +56,49 @@ class User:
     def authenticate(self, password):
         """Authenticate user"""
         return self.password == password
+
 #inheritance of the student class
 class Student(User):
-    def __init__(self, username, password, role, student_id, canteen_card_balance, wallet_password):
+    def __init__(self, username, password, role, student_id):
         super().__init__(username, password, role)
         self.student_id = student_id
-        self.canteen_card_balance = float(canteen_card_balance)
-        self.wallet_password = wallet_password
+        self.wallet_password = self._get_wallet_password()
+        self.canteen_card_balance = self._get_wallet_balance()
         self.cart = Cart()
         self.order_history = []
+    
+    def _get_wallet_password(self):
+        """Get wallet password from students.txt file"""
+        try:
+            with open(students_file, 'r') as f:
+                for line in f:
+                    if line.strip():
+                        sid, wallet_pwd = line.strip().split('|')
+                        if sid == self.student_id:
+                            return wallet_pwd
+            return None
+        except FileNotFoundError:
+            return None
+        except Exception as e:
+            print(f"Error getting wallet password: {e}")
+            return None
+
+    def _get_wallet_balance(self):
+        """Get wallet balance from wallet.txt file"""
+        try:
+            with open(wallet_file, 'r') as f:
+                for line in f:
+                    if line.strip():
+                        sid, balance = line.strip().split('|')
+                        if sid == self.student_id:
+                            return float(balance)
+            return 0.0
+        except FileNotFoundError:
+            return 0.0
+        except Exception as e:
+            print(f"Error getting wallet balance: {e}")
+            return 0.0
+
     def greet_user(self):
         #overriding greet
         print(f"\n{'='*50}")
@@ -161,32 +203,14 @@ class Student(User):
             return  
         self.view_cart()
         print("\n=== Payment Options ===")
-        print("1. Canteen Card")
-        print("2. Wallet")
-        print("3. Cash")
-        print("4. Cancel")
+        print("1. Wallet")
+        print("2. Cash")
+        print("3. Cancel")
         try:
-            choice = input("Choose payment method (1-4): ")
+            choice = input("Choose payment method (1-3): ")
             if choice == "1":
-                if self.cart.total_price > self.canteen_card_balance:
-                    print("Insufficient balance in canteen card")
-                    return
-                self.canteen_card_balance -= self.cart.total_price
-                self.complete_order("canteen_card")
-                
-            elif choice == "2":
-                # adding wallet balance to the file
-                wallet_balance = 0
-                try:
-                    with open(wallet_file, 'r') as f:
-                        for line in f:
-                            sid, balance = line.strip().split('|')
-                            if sid == self.student_id:
-                                wallet_balance = float(balance)
-                                break
-                except FileNotFoundError:
-                    print("Wallet not found")
-                    return
+                # Get wallet balance from file
+                wallet_balance = self._get_wallet_balance()
                 
                 if wallet_balance < self.cart.total_price:
                     print("Insufficient wallet balance")
@@ -197,21 +221,31 @@ class Student(User):
                     print("Invalid wallet password")
                     return
                 
-                # updation of wallet balance
+                # Update wallet balance
                 with open(wallet_file, 'r') as f:
                     lines = f.readlines()
                 with open(wallet_file, 'w') as f:
                     for line in lines:
-                        sid, balance = line.strip().split('|')
-                        if sid == self.student_id:
-                            f.write(f"{sid}|{float(balance) - self.cart.total_price}\n")
-                        else:
-                            f.write(line)
+                        if line.strip():
+                            sid, balance = line.strip().split('|')
+                            if sid == self.student_id:
+                                f.write(f"{sid}|{float(balance) - self.cart.total_price}\n")
+                            else:
+                                f.write(line)
                 
                 self.complete_order("wallet")
-            elif choice == "3":
+            elif choice == "2":
+                # Generate queue number for cash payment
+                import random
+                queue_number = random.randint(1000, 9999)
+                print(f"\n=== Cash Payment Selected ===")
+                print(f"Your queue number is: {queue_number}")
+                print("Please show this queue number at the canteen counter,")
+                print("pay the cash amount, and collect your food.")
+                print(f"Total amount to pay: ₹{self.cart.total_price:.2f}")
+                
                 self.complete_order("cash")
-            elif choice == "4":
+            elif choice == "3":
                 print("Order cancelled")
                 return
             else:
@@ -221,8 +255,8 @@ class Student(User):
     def complete_order(self, payment_method):
         order = Order(self, self.cart.cart_items, self.cart.total_price)
         print(f"\nOrder placed successfully using {payment_method}!")
-        if payment_method == "canteen_card":
-            print(f"Remaining canteen card balance: ₹{self.canteen_card_balance:.2f}")
+        if payment_method == "wallet":
+            print(f"Remaining wallet balance: ₹{self._get_wallet_balance():.2f}")
         self.cart.clear_cart()
     def view_order_history(self):
         try:
@@ -230,12 +264,13 @@ class Student(User):
             found = False
             with open(bill_history_file, 'r') as f:
                 for line in f:
-                    sid, items, total = line.strip().split('|')
-                    if sid == self.student_id:
-                        found = True
-                        print(f"\nItems: {items}")
-                        print(f"Total: ₹{float(total):.2f}")
-                        print("-" * 30)
+                    if line.strip():
+                        sid, items, total = line.strip().split('|')
+                        if sid == self.student_id:
+                            found = True
+                            print(f"\nItems: {items}")
+                            print(f"Total: ₹{float(total):.2f}")
+                            print("-" * 30)
             
             if not found:
                 print("No order history found")
@@ -247,17 +282,11 @@ class Student(User):
 
     def check_wallet_balance(self):
         try:
-            with open(wallet_file, 'r') as f:
-                for line in f:
-                    sid, balance = line.strip().split('|')
-                    if sid == self.student_id:
-                        print(f"\nWallet Balance: ₹{float(balance):.2f}")
-                        return
-            print("Wallet not found")
-        except FileNotFoundError:
-            print("Wallet system is not available")
+            balance = self._get_wallet_balance()
+            print(f"\nWallet Balance: ₹{balance:.2f}")
         except Exception as e:
             print(f"Error checking wallet balance: {e}")
+
 #admin class
 class Admin(User):
     def __init__(self, username, password, role, canteen_name):
@@ -399,21 +428,34 @@ class Admin(User):
         try:
             student_id = input("Enter student ID: ").strip()
             
-            # showing current wallet balancw
+            # Verify if student exists in users.txt
+            student_exists = False
+            with open(users_file, 'r') as f:
+                for line in f:
+                    if line.strip():
+                        parts = line.strip().split('|')
+                        if len(parts) >= 4 and parts[2] == "student" and parts[3] == student_id:
+                            student_exists = True
+                            break
+            
+            if not student_exists:
+                print(f"Student ID {student_id} not found in the system.")
+                return
+                
+            # Check if student exists in wallet.txt
             wallet_data = {}
             try:
                 with open(wallet_file, 'r') as f:
                     for line in f:
-                        sid, balance = line.strip().split('|')
-                        wallet_data[sid] = float(balance)
+                        if line.strip():
+                            sid, balance = line.strip().split('|')
+                            wallet_data[sid] = float(balance)
             except FileNotFoundError:
                 print("Wallet file not found. Creating new file.")
             
             if student_id not in wallet_data:
-                create_new = input("Student not found. Create new wallet? (y/n): ").lower()
-                if create_new != 'y':
-                    return
-                wallet_data[student_id] = 0
+                print(f"Student ID {student_id} not found in wallet. Creating new wallet entry.")
+                wallet_data[student_id] = 0.0
             
             current_balance = wallet_data[student_id]
             print(f"Current balance: ₹{current_balance:.2f}")
@@ -443,7 +485,7 @@ class Admin(User):
                 wallet_data[student_id] -= amount
                 print(f"Subtracted ₹{amount:.2f}")
             
-            #updated balance in wallet
+            # Update wallet.txt with new balance
             with open(wallet_file, 'w') as f:
                 for sid, balance in wallet_data.items():
                     f.write(f"{sid}|{balance}\n")
@@ -452,6 +494,7 @@ class Admin(User):
             
         except Exception as e:
             print(f"Error updating wallet: {e}")
+
 class FoodItem:
     def __init__(self, item_id, name, description, price, availability=True):
         self.item_id = item_id
@@ -470,8 +513,9 @@ class Menu:
         try:
             with open(os.path.join(BASE_DIR, 'food_items.txt'), 'r') as f:
                 for line in f:
-                    item_id, name, desc, price, avail = line.strip().split('|')
-                    self.food_items.append(FoodItem(int(item_id), name, desc, float(price), avail))
+                    if line.strip():
+                        item_id, name, desc, price, avail = line.strip().split('|')
+                        self.food_items.append(FoodItem(int(item_id), name, desc, float(price), avail))
         except FileNotFoundError:
             print("Menu file not found. Starting with empty menu.")
         except Exception as e:
@@ -514,6 +558,69 @@ class Cart:
     def clear_cart(self):
         self.cart_items = []
         self.total_price = 0
+
+def register_user():
+    """Register a new user"""
+    try:
+        print("\n=== Register New User ===")
+        
+        # Get user details
+        username = input("Enter username: ").strip()
+        
+        # Check if username already exists
+        try:
+            with open(users_file, 'r') as f:
+                for line in f:
+                    if line.strip():
+                        user_data = line.strip().split('|')
+                        if user_data[0] == username:
+                            print("Username already exists. Please choose another.")
+                            return
+        except FileNotFoundError:
+            pass
+        
+        password = input("Enter password: ").strip()
+        role = "student"  # By default, new users are students
+        
+        # Generate next student ID
+        student_ids = []
+        try:
+            with open(users_file, 'r') as f:
+                for line in f:
+                    if line.strip():
+                        user_data = line.strip().split('|')
+                        if len(user_data) >= 4 and user_data[2] == "student":
+                            student_ids.append(user_data[3])
+        except FileNotFoundError:
+            pass
+        
+        if student_ids:
+            max_id = max([int(sid.replace("STD", "")) for sid in student_ids])
+            student_id = f"STD{max_id + 1:03d}"
+        else:
+            student_id = "STD101"
+        
+        # Wallet password
+        wallet_password = input("Enter wallet password: ").strip()
+        
+        # Save user to users.txt
+        with open(users_file, 'a') as f:
+            f.write(f"{username}|{password}|{role}|{student_id}\n")
+        
+        # Save student details to students.txt
+        with open(students_file, 'a') as f:
+            f.write(f"{student_id}|{wallet_password}\n")
+        
+        # Initialize wallet with zero balance
+        with open(wallet_file, 'a') as f:
+            f.write(f"{student_id}|0.00\n")
+        
+        print(f"\nSuccess! User {username} registered with Student ID: {student_id}")
+        print("Initial wallet balance is ₹0.00. Please contact admin to add funds.")
+        
+    except Exception as e:
+        print(f"Error registering user: {e}")
+
 def main():
     #main function to run the canteen management system
     setup_files()
@@ -522,9 +629,10 @@ def main():
     while True:
         print("\n=== Canteen Management System ===")
         print("1. Login")
-        print("2. Exit")
+        print("2. Register New User")
+        print("3. Exit")
         
-        choice = input("Enter your choice (1-2): ")
+        choice = input("Enter your choice (1-3): ")
         
         if choice == "1":
             username = input("Username: ")
@@ -532,32 +640,37 @@ def main():
             
             try:
                 # reading users from file
+                user_found = False
                 with open(users_file, 'r') as f:
                     for line in f:
-                        user_data = line.strip().split('|')
-                        if user_data[0] == username:
-                            if user_data[1] == password:
-                                if user_data[2] == 'admin':
-                                    admin = Admin(username, password, 'admin', user_data[3])
-                                    admin.greet_user()
-                                    admin.manage_menu(menu)
+                        if line.strip():
+                            user_data = line.strip().split('|')
+                            if user_data[0] == username:
+                                user_found = True
+                                if user_data[1] == password:
+                                    if user_data[2] == 'admin':
+                                        admin = Admin(username, password, 'admin', user_data[3])
+                                        admin.greet_user()
+                                        admin.manage_menu(menu)
+                                    else:
+                                        student = Student(username, password, 'student', user_data[3])
+                                        student.greet_user()
+                                        student.student_menu(menu)
                                 else:
-                                    student = Student(username, password, 'student', 
-                                                    user_data[3], user_data[4], user_data[5])
-                                    student.greet_user()
-                                    student.student_menu(menu)
-                                break
-                            else:
-                                raise InvalidPasswordException()
-                    else:
-                        raise UserNotFoundException()
+                                    raise InvalidPasswordException()
+                
+                if not user_found:
+                    raise UserNotFoundException()
                         
             except (InvalidPasswordException, UserNotFoundException) as e:
                 print(e)
             except Exception as e:
                 print(f"An error occurred: {e}")
-                
+        
         elif choice == "2":
+            register_user()
+                
+        elif choice == "3":
             print("Thank you for using the Canteen Management System!")
             break
         else:
