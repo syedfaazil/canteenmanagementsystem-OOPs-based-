@@ -116,8 +116,5 @@ The system includes custom exception classes:
 - Feedback system for food items
 - Notification system for order status updates
 
-## Author
-Done by Syed Faazil S
-
 ## License
 This project is licensed under the Apache License 2.0 - see the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0) for details.
